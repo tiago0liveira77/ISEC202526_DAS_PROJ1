@@ -2,15 +2,18 @@ package org.example.builder;
 
 import org.example.factory.NumberFactory;
 import org.example.interfaces.MathExpression;
+import org.example.interfaces.OperationHandler;
 import org.example.tree.OperationNode;
 
 public class MathExpressionBuilder {
     private MathExpression actualExpression;
     private String operator;
     private NumberFactory numberFactory;
+    private OperationHandler operationHandler;
 
-    public MathExpressionBuilder() {
+    public MathExpressionBuilder(OperationHandler operationHandler) {
         this.numberFactory = new NumberFactory();
+        this.operationHandler = operationHandler;
     }
 
     public void addValue(int value){
@@ -26,7 +29,7 @@ public class MathExpressionBuilder {
             // Lado Esquerdo -> a 'expressaoAtual' que já tinhas.
             // Lado Direito  -> o 'novoOperando' que acabaste de receber.
             // Operador      -> o 'operadorPendente' que guardaste antes.
-            MathExpression newOp = new OperationNode(this.actualExpression, newValue, this.operator);
+            MathExpression newOp = new OperationNode(this.actualExpression, newValue, this.operator, this.operationHandler);
             this.actualExpression = newOp;
             this.operator = null;
         }

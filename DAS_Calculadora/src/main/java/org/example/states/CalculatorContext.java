@@ -1,19 +1,25 @@
 package org.example.states;
 
 import org.example.builder.MathExpressionBuilder;
+import org.example.handlers.AddHandler;
+import org.example.handlers.MultiplyHandler;
+import org.example.handlers.SubtractHandler;
 import org.example.interfaces.CalculatorState;
 import org.example.interfaces.MathExpression;
-import org.example.tree.OperationNode;
+import org.example.interfaces.OperationHandler;
 
 
 public class CalculatorContext
 {
+    private OperationHandler operationHandler;
     private CalculatorState currentState;
     private MathExpressionBuilder builder;
 
     public CalculatorContext() {
-        this.builder = new MathExpressionBuilder();
+        this.operationHandler = setUpChain();
+        this.builder = new MathExpressionBuilder(this.operationHandler);
         this.currentState = new StartState(this, this.builder);
+
     }
 
     public void setState(CalculatorState newState){
@@ -38,6 +44,8 @@ public class CalculatorContext
                 //--> 4. Repõe a máquina de estados para o início: this.setState(new StartState(...));
                 MathExpression expFinal = this.builder.getExpression();
                 System.out.println("Resultado de " + expFinal + " = " + expFinal.calculate());
+                this.builder.reset();
+                this.currentState = new StartState(this, this.builder);
                 break;
 
             case "L":
@@ -64,6 +72,17 @@ public class CalculatorContext
                 }
                 break;
         }
+    }
+
+    private OperationHandler setUpChain(){
+        OperationHandler addHandler = new AddHandler();
+        OperationHandler subtractHandler = new SubtractHandler();
+        OperationHandler multiplyHandler = new MultiplyHandler();
+
+        addHandler.setNext(subtractHandler);
+        subtractHandler.setNext(multiplyHandler);
+
+        return addHandler;
     }
 
 }
