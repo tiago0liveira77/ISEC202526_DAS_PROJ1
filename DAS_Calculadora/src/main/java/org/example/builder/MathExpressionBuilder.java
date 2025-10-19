@@ -39,6 +39,14 @@ public class MathExpressionBuilder {
         return this.actualExpression;
     }
 
+    public void setExpression(MathExpression expression) {
+        // 1. Limpa qualquer estado anterior que o builder possa ter.
+        this.reset();
+
+        // 2. Define a expressão atual como sendo a expressão vinda do histórico.
+        this.actualExpression = expression;
+    }
+
     public void setOperator(String op){
         this.operator = op;
     }

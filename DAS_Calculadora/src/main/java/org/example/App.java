@@ -14,8 +14,7 @@ public class App {
         // O Scanner é uma classe do Java para ler inputs de várias fontes, incluindo o teclado.
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Calculadora Simples. Digite as suas expressões.");
-        System.out.println("Use 'L' para listar o histórico. Use '=' para calcular.");
+        showWelcome();
 
         // 3. Loop infinito para manter a aplicação a correr.
         // O programa só termina se o fecharmos manualmente.
@@ -31,15 +30,27 @@ public class App {
                 continue;
             }
 
-            // 4. Divide a linha em "tokens" usando o espaço como separador.
-            // Por exemplo, a string "10 + 5 =" torna-se um array: ["10", "+", "5", "="]
-            String[] tokens = line.trim().split("\\s+");
+            calculator.processCommand(line);
 
-            // 5. Envia cada token, um a um, para ser processado pela nossa máquina de estados.
-            // A complexidade está toda escondida dentro do método calculator.processToken().
-            for (String token : tokens) {
-                calculator.processToken(token);
-            }
         }
+    }
+
+    private static void showWelcome(){
+        System.out.println("********************************************************************");
+        System.out.println("* *");
+        System.out.println("*\t\t\tCalculadora Simples\t\t   *");
+        System.out.println("* *");
+        System.out.println("********************************************************************");
+        System.out.println("* Instruções: Digite uma expressão (e.g., 10 + 5) e use '=' para   *");
+        System.out.println("* calcular. Os tokens devem ser separados por espaços.             *");
+        System.out.println("* *");
+        System.out.println("* Comandos disponíveis:                                            *");
+        System.out.println("* L           -> Lista o histórico de expressões.                  *");
+        System.out.println("* M<idx>      -> Recupera uma expressão do histórico (e.g., M0).   *");
+        System.out.println("* R <idx> <op> <novoOp> -> Substitui um operador (e.g., R 0 + *).  *");
+        System.out.println("* C <idx1> <idx2> <op>  -> Combina duas expressões (e.g.,C 0 1 +). *");
+        System.out.println("* *");
+        System.out.println("********************************************************************");
+        System.out.println(); // Linha em branco para separar do primeiro prompt
     }
 }

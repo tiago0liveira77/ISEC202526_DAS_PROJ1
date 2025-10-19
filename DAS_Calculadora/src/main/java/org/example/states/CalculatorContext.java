@@ -7,22 +7,28 @@ import org.example.handlers.SubtractHandler;
 import org.example.interfaces.CalculatorState;
 import org.example.interfaces.MathExpression;
 import org.example.interfaces.OperationHandler;
+import org.example.interfaces.Visitor;
+import org.example.visitor.OpReplaceVisitor;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 
-public class CalculatorContext
-{
+public class CalculatorContext {
     private OperationHandler operationHandler;
     private CalculatorState currentState;
     private MathExpressionBuilder builder;
+    private List<MathExpression> listHistoricOps;
 
     public CalculatorContext() {
         this.operationHandler = setUpChain();
         this.builder = new MathExpressionBuilder(this.operationHandler);
         this.currentState = new StartState(this, this.builder);
-
+        this.listHistoricOps = new ArrayList<>();
     }
 
-    public void setState(CalculatorState newState){
+    public void setState(CalculatorState newState) {
         this.currentState = newState;
     }
 
@@ -30,51 +36,76 @@ public class CalculatorContext
         return this.builder;
     }
 
-    public void processToken(String token) {
-        // Converte o token para maiúsculas para facilitar o tratamento de comandos
-        String upperToken = token.toUpperCase();
+    public void processCommand(String line) {
+        String[] tokens = line.trim().split("\\s+");
+        if(tokens.length == 0){
+            return;
+        }
+
+        String upperToken = tokens[0].toUpperCase();
 
         // Tratamento de comandos especiais primeiro
-        switch (upperToken) {
-            case "=":
-                //--> Lógica para finalizar a expressão.
-                //--> 1. Obtém a MathExpression final do builder.
-                //--> 2. Se a expressão for válida, calcula, imprime e guarda no histórico.
-                //--> 3. Limpa o builder com builder.reset().
-                //--> 4. Repõe a máquina de estados para o início: this.setState(new StartState(...));
-                MathExpression expFinal = this.builder.getExpression();
-                System.out.println("Resultado de " + expFinal + " = " + expFinal.calculate());
-                this.builder.reset();
-                this.currentState = new StartState(this, this.builder);
-                break;
-
-            case "L":
-                //--> Lógica para listar o histórico de expressões.
-                //--> Percorre a lista `history` e imprime cada expressão com o seu índice.
-                break;
-
-            // Adiciona aqui 'case' para os outros comandos: 'M', 'R', 'C'
-            case "M": //Imprimir expressao atual
-                System.out.println(this.builder.getExpression().toString());
-                break;
-
-            default:
-                // Se não for um comando especial, tenta processar como número ou operador.
-                try {
-                    // Tenta converter para número
-                    int number = Integer.parseInt(token);
-                    // Se conseguir, delega para o estado atual.
-                    this.currentState.processNumber(number);
-                } catch (NumberFormatException e) {
-                    // Se não for um número, assume que é um operador.
-                    // (Podes adicionar mais validações aqui se quiseres)
-                    this.currentState.processOperator(token);
+        if (upperToken.startsWith("M")) {
+            String indexString = upperToken.substring(1);
+            int index = Integer.parseInt(indexString);
+            if (index >= 0 && index < this.listHistoricOps.size()) {
+                MathExpression expressao = this.listHistoricOps.get(index);
+                System.out.println(index + ": " + expressao);
+                this.builder.setExpression(this.listHistoricOps.get(index));
+                this.currentState = new WaitingForOperatorState(this, this.builder);
+            } else {
+                System.out.println("ERROR - INDEX NAO EXISTE");
+            }
+        } else if (upperToken.startsWith("R")) { //alterar operador
+            if (tokens.length != 4) {
+                System.out.println("Erro: Formato inválido. Use: R <index> <opOriginal> <opNovo>");
+            }
+            try {
+                int index = Integer.parseInt(tokens[1]);
+                String originalOp = tokens[2];
+                String newOp = tokens[3];
+                if (index >= 0 && index < this.listHistoricOps.size()) {
+                    MathExpression expressionToModify = this.listHistoricOps.get(index);
+                    Visitor visitor = new OpReplaceVisitor(originalOp, newOp);
+                    expressionToModify.accept(visitor);
                 }
-                break;
+            } catch (NumberFormatException e) {
+                System.err.println("Erro: O índice deve ser um número.");
+            }
+        } else if (upperToken.equals("L")) { //Listar operaçoes
+            showHistoricList();
+        } else { //Construir expressao+
+            for (String token : tokens) {
+                processToken(token);
+            }
+
         }
     }
 
-    private OperationHandler setUpChain(){
+    private void processToken(String token){
+        if (token.equals("=")) {
+            //--> Lógica para finalizar a expressão.
+            //--> 1. Obtém a MathExpression final do builder.
+            //--> 2. Se a expressão for válida, calcula, imprime e guarda no histórico.
+            //--> 3. Limpa o builder com builder.reset().
+            //--> 4. Repõe a máquina de estados para o início: this.setState(new StartState(...));
+            MathExpression expFinal = this.builder.getExpression();
+            System.out.println("Resultado de " + expFinal + " = " + expFinal.calculate());
+            this.listHistoricOps.add(expFinal);
+            this.builder.reset();
+            this.currentState = new StartState(this, this.builder);
+        } else {
+            try {
+                int number = Integer.parseInt(token);
+                this.currentState.processNumber(number);
+            } catch (NumberFormatException e) {
+                this.currentState.processOperator(token);
+            }
+        }
+
+    }
+
+    private OperationHandler setUpChain() {
         OperationHandler addHandler = new AddHandler();
         OperationHandler subtractHandler = new SubtractHandler();
         OperationHandler multiplyHandler = new MultiplyHandler();
@@ -83,6 +114,17 @@ public class CalculatorContext
         subtractHandler.setNext(multiplyHandler);
 
         return addHandler;
+    }
+
+    private void showHistoricList() {
+        //Iterator<MathExpression> it = this.listHistoricOps.iterator();
+        //while(it.hasNext()) {
+        //     System.out.println(it.next());
+        //}
+        for (int i = 0; i < listHistoricOps.size(); i++) {
+            MathExpression expression = listHistoricOps.get(i);
+            System.out.println(i + ": " + expression);
+        }
     }
 
 }

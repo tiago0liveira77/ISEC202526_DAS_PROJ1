@@ -1,6 +1,7 @@
 package org.example.tree;
 
 import org.example.interfaces.MathExpression;
+import org.example.interfaces.Visitor;
 
 public class NumberLeaf implements MathExpression {
     private int value;
@@ -17,5 +18,10 @@ public class NumberLeaf implements MathExpression {
     @Override
     public String toString() {
         return value + "";
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        visitor.visit(this);
     }
 }
