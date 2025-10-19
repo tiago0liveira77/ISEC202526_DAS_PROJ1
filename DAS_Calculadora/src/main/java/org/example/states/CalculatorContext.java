@@ -8,6 +8,7 @@ import org.example.interfaces.CalculatorState;
 import org.example.interfaces.MathExpression;
 import org.example.interfaces.OperationHandler;
 import org.example.interfaces.Visitor;
+import org.example.tree.OperationNode;
 import org.example.visitor.OpReplaceVisitor;
 
 import java.util.ArrayList;
@@ -68,6 +69,27 @@ public class CalculatorContext {
                     MathExpression expressionToModify = this.listHistoricOps.get(index);
                     Visitor visitor = new OpReplaceVisitor(originalOp, newOp);
                     expressionToModify.accept(visitor);
+                }
+            } catch (NumberFormatException e) {
+                System.err.println("Erro: O índice deve ser um número.");
+            }
+        } else if (upperToken.startsWith("C")) { //alterar operador
+            if (tokens.length != 4) {
+                System.out.println("Erro: Formato inválido. Use: C <index1> <index2> <op>");
+            }
+            try {
+                int index1 = Integer.parseInt(tokens[1]);
+                int index2 = Integer.parseInt(tokens[2]);
+                String op = tokens[3];
+                if (index1 >= 0 && index2 >= 0 && index1 < this.listHistoricOps.size() && index2 < this.listHistoricOps.size()) {
+                    MathExpression exp1 = this.listHistoricOps.get(index1);
+                    MathExpression exp2 = this.listHistoricOps.get(index2);
+
+                    MathExpression combinedExpression = new OperationNode(exp1, exp2, op, this.operationHandler);
+                    builder.setExpression(combinedExpression);
+
+                    this.setState(new WaitingForOperatorState(this, this.builder));
+
                 }
             } catch (NumberFormatException e) {
                 System.err.println("Erro: O índice deve ser um número.");
